@@ -18,7 +18,10 @@ describe('JsonClient', function () {
     var CLIENT = clients.createJsonClient({
         url: 'http://localhost:3000',
         log: LOG,
-        retry: false
+        retry: false,
+        headers: {
+            connection: 'close'
+        }
     });
 
     beforeEach(function (done) {
@@ -131,6 +134,28 @@ describe('JsonClient', function () {
         }, function (err, req, res, data) {
             assert.ifError(err);
             assert.strictEqual(req.path, '/foo?a=1');
+            return done();
+        });
+    });
+
+
+    it('should reuse existing base path url', function (done) {
+        SERVER.get('/foo/bar', function (req, res, next) {
+            res.send(200);
+            return next();
+        });
+
+        var client = clients.createJsonClient({
+            url: 'http://localhost:3000/foo',
+            headers: {
+                connection: 'close'
+            },
+            appendPath: true
+        });
+
+        client.get('/bar', function (err, req, res, data) {
+            assert.ifError(err);
+            assert.strictEqual(req.path, '/foo/bar');
             return done();
         });
     });
